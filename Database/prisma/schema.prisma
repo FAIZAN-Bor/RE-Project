@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model PatientMaster {
+  pid          Int     @id
+  p_name       String
+  dob          String  // stored as 'DD/MM/YYYY' plain text
+  sex          String  // 'M', 'F', or '3' for non-binary
+  ph1          String?
+  ph2          String?
+  ph3          String? // repeating phone group
+  addr1        String?
+  addr2        String?
+  city         String?
+  reg_doc      String? // doctor full name stored as plain text
+  reg_doc_id   String? // sometimes INT string, sometimes 'DR-042'
+  total_visits Int?    // updated manually, not via trigger
+  last_bill    Float?  // stores PKR amounts; FLOAT used for currency
+  notes        String? @db.Text // JSON blobs, free text, and CSV tags all mixed
+
+  @@map("pat_master")
+}
+
+model Appointment {
+  appt_id    Int     @id
+  patient_id Int
+  patient_nm String  // duplicated from pat_master
+  patient_ph String  // duplicated from pat_master
+  doc_id     Int
+  doc_name   String  // duplicated from doctors table
+  appt_date  String  // 'YYYY-MM-DD HH:MM' stored as text
+  status     String  // 'P'=Pending 'C'=Complete 'X'=Cancel 'H'=Hold 'R'=Rescheduled
+  fee        Float?
+  discount   Float?
+  net_fee    Float?  // always = fee-discount (derived value)
+  room       String? // 'Room 3 Block B' — two facts in one column
+
+  @@map("appointments")
+}
+
+model Doctor {
+  DoctorID   Int     @id
+  FullName   String
+  Speciality String
+  ContactNo  String?
+  JoinDt     String? // date stored as text
+  Salary     Float?  // monthly salary stored as FLOAT
+  dept_id    Int?    // references departments but no FK defined
+  isActive   String? // 'Y', 'N', or sometimes '1'
+
+  @@map("doctors")
+}
+
+model Billing {
+  bill_no     String  @id // intended as PK but no constraint defined
+  pid         Int
+  pname       String  // patient name duplicated again
+  services    String? @db.Text // 'Lab,Xray,OPD' — comma-separated list
+  svc_cost    Float?
+  tax_pct     Float?
+  tax_amt     Float?  // derived: svc_cost * tax_pct / 100
+  grand_total Float?  // derived: svc_cost + tax_amt
+  paid        Float?
+  balance     Float?  // derived: grand_total-paid
+  created     String? // date stored as text
+  created_by  String? // username as free text; no FK to users
+
+  @@map("billing")
+}
+
+model Department {
+  dept_id Int     @id
+  dept_nm String
+  hod     String? // head-of-department stored as plain name
+  budget  Float?
+
+  @@map("departments")
+}

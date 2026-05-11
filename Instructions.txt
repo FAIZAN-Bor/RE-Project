@@ -1,0 +1,746 @@
+Marks Distribution at a Glance
+Section
+MaxMarks
+Marks
+Obtained
+Part A —Project Initialisation and Tool Setup
+8
+Part B —Code Smell Analysis and Refactoring
+27
+Part C —Dependency, Coupling and Technical Debt
+15
+Part D —Dynamic Program Analysis
+10
+Part E —Data Smell Detection
+15
+Part F —Schema Normalisation and Refactoring
+15
+Part G —DataMigration Design and Execution
+10
+TOTAL
+100
+Note
+Code Smell Analysis (Part B) and Database parts (Parts E, F, G) together carry 67 out of
+100 marks — reflecting their central importance in software re-engineering.
+Project Background
+HealthBridge Hospital has operated a legacy patient management system for fifteen years. Built as a
+monolithic Java application with a partially relational, partially flat-file database, the system was extended
+by multiple development teams with no architectural discipline. The codebase now suffers from pervasive
+code smells that violate object-oriented principles, while the database has accumulated data smells that
+cause reporting errors and integrity failures.
+Your team has beenengagedas software re-engineering consultants. You will apply a full re-engineering
+pipeline — selecting a real Java project for code analysis, and working with the provided legacy hospital
+schema for all database tasks. Every finding must be supported by actual tool output, real SQL, and your
+ownwritten interpretation.
+The TwoArtefacts You Will Work On
+Artefact
+What It Is
+Used In
+Open-Source Java Project
+AJava project you select from GitHub (criteria
+in Part A)
+Parts A, B, C, D
+Legacy Hospital DB Schema
+The schema provided in Part E of this
+document
+Parts E, F, G
+Part A —Project Initialisation and Tool Setup [8 Marks]
+A1. Java Project Selection [3 Marks]
+Select one open-source Java project from GitHub satisfying all criteria below. You will use this same project
+throughout Parts B, C, and D.
+• Minimum2000linesofapplication source code (excluding tests and auto-generated files)
+• Atleastsix distinct Java classes with inter-class dependencies
+• Containsat least one long method, one large class, or one obvious structural problem visible to the
+naked eye —thesewill be the focus of Part B
+• Hasnotbeenusedinanypreviouscoursework by either group member
+• Compilessuccessfully on your machine with no build errors
+In your report document:
+1. Provide the full GitHub URL and write two paragraphs describing what the system does
+2. State the total line count, class count, and Java version
+3. Include a screenshot of the repository page with your account or fork visible
+4. Explain in one paragraph why this project is a good candidate for code smell analysis
+A2. Tool Installation and Verification [5 Marks]
+Tool
+Purpose
+Verification Evidence
+Required
+SonarQube via Docker
+Static analysis, smell detection, metrics
+Screenshot of dashboard at
+localhost:9000
+SonarScanner
+Submits project to SonarQube
+Terminal output showing
+BUILD SUCCESS
+Docker
+Hosts SonarQube container
+docker--version output
+Python Tutor (online)
+Step-by-step execution tracing
+Screenshot with code loaded
+Draw.io or Graphviz
+Control flow and dependency diagrams
+Screenshot of a diagram open
+in the tool
+MySQL or PostgreSQL
+Run the legacy hospital schema
+mysql--version or psql--
+version
+For each tool, include the version number alongside the screenshot. Screenshots without version numbers
+or console output receive half marks.
+Part B —CodeSmell Analysis and Refactoring [27 Marks]
+Code smells are surface indicators of deeper design problems. They do not prevent a program from running,
+but they slow development, introduce bugs, and make maintenance expensive. This part requires you to
+identify real code smells in your chosen project, classify them precisely, explain their root cause, and
+propose concrete refactoring treatments.
+Weight
+Part B carries 27 marks — the largest single section — because identifying, classifying, and
+reasoning about code smells is the core skill of software re-engineering.
+B1. SonarQube Analysis and Metrics Extraction [5 Marks]
+Configure and execute SonarScanner against your project. Include the sonar-project.properties file you used,
+a screenshot of the SonarScanner terminal output, and a screenshot of the SonarQube project overview
+dashboard.
+Extract all metrics below. For each, write two to three sentences of project-specific interpretation — generic
+definitions copied from lecture slides will not receive marks.
+Metric
+Your Value
+Your Project-Specific Interpretation
+Lines of Code (LOC)
+Total Code Smells
+Cyclomatic Complexity
+(total)
+Average CC per function
+Cognitive Complexity
+Code Duplication (%)
+Maintainability Rating (A–E)
+Technical Debt (hours)
+Security Hotspots
+B2. The Five Code Smell Categories — Deep Identification [16 Marks]
+Your selected project must be examined through the lens of all five official smell categories. For each
+category, identify at least two real smells from your codebase. Every smell entry must include the exact file
+nameandline number so it can be verified during viva.
+Category 1: Bloaters [4 Marks]
+Bloaters are code elements that have grown so large they are hard to work with. They accumulate gradually
+as programs evolve and are rarely cleaned up. The five Bloater smells are: Long Method, Large Class, Long
+Parameter List, Primitive Obsession, and Data Clumps.
+Reference definitions:
+• LongMethod—Amethodwithexcessivelines ofcode wherescrolling is required to read it. All logic
+crammedinto one function makes it tightly coupled and fragile. Treatment: Extract Method.
+• LargeClass —Aclasstrying to do too much, violating the Single Responsibility Principle. As size grows,
+cohesion drops. Treatment: Extract Class into focused responsibilities.
+• LongParameterList — Amethodsignature withso manyparameters it becomes hard tocall
+correctly and reveals that the class is pulling data from too many places. Treatment: Introduce
+Parameter Object.
+• Primitive Obsession — Using primitive data types (String, int, float) to represent rich domain
+concepts instead of small dedicated classes. Treatment: Replace Data Value with Object.
+• DataClumps—Thesamegroupoftwotofourvariablesappearing together across multiple methods
+or classes, signalling a missing abstraction. Treatment: Extract Class or Introduce Parameter Object.
+Smell Name
+File and Line Number
+Evidence — what you
+see in the code
+WhyIt Is a Bloater
+Recommended
+Treatment
+(e.g. Long Method)
+(e.g. Large Class)
+For the Long Methodor Large Class you found, paste the method orclass signature (not the full body) in
+your report and annotate it to show exactly which lines make it a smell.
+Category 2: Object-Orientation Abusers [3 Marks]
+These smells result from incomplete or incorrect application of object-oriented principles. The four OO
+Abuser smells are: Switch Statements, Temporary Fields, Refused Bequest, and Alternative Classes with
+Different Interfaces.
+• SwitchStatements —Aswitch orchain of if-else that selects behaviour based on a type field. Every
+time a newtype is added, every switch must be updated. Treatment: Replace with Polymorphism
+(Strategy or State pattern).
+• TemporaryFields —Aclass instance variable that is only set and used in one specific scenario,
+leaving it null or meaningless the rest of the time. Treatment: Extract Class or Introduce Null Object.
+• RefusedBequest —Asubclass inherits methods from a parent but ignores oroverrides most of them,
+failing the IS-A test and violating the Liskov Substitution Principle. Treatment: Replace Inheritance
+with Delegation or restructure the hierarchy.
+• Alternative Classes with Different Interfaces — Two or more classes that do the same thing but have
+different method names or signatures, preventing them from being used interchangeably. Treatment:
+RenameMethods orExtract Superclass / common interface.
+Smell Name
+File and Line
+Evidence from Your Code
+OOPrinciple
+Violated
+Treatment
+Category 3: Change Preventors [3 Marks]
+Change Preventors mean that a single logical change forces modifications in many unrelated places, making
+maintenance expensive and error-prone. The three smells are: Divergent Change, Shotgun Surgery, and
+Parallel Inheritance Hierarchies.
+• Divergent Change —Oneclassmustbe editedfor multiple unrelated reasons (e.g., a change to the
+reporting format AND a change to the data validation logic both require editing the same class). This
+violates SRP. Treatment: Extract Class to separate responsibilities.
+• ShotgunSurgery —Asingle logical change (e.g., changing a tax rate) requires small edits scattered
+across many classes. Treatment: Move Method and Move Field to consolidate related behaviour.
+• Parallel Inheritance Hierarchies — Every time a subclass is added to one hierarchy, a corresponding
+subclass must be added to another. Treatment: Merge hierarchies or use delegation.
+Smell Name
+File(s) and Lines
+HowManyPlaces Must
+Change?
+Treatment Strategy
+Category 4: Dispensables [3 Marks]
+Dispensables are things that serve no purpose — their removal would make the code cleaner, smaller, and
+easier to read. The five dispensable smells are: Comments (excessive/redundant), Duplicate Code, Lazy Class,
+Data Class, and Speculative Generality.
+• Comments(Excessive or Redundant) —Comments that describe what the code does rather than why,
+repeating what clear naming already communicates. They become a maintenance burden.
+Commentsare sometimes called the deodorant of code — masking a bad smell instead of removing
+it. Treatment: Rename methods and variables to be self-documenting; remove redundant comments.
+• Duplicate Code—Thesamelogicappears in twoormore places. Fixing a bug in one copybut not the
+others introduces subtle inconsistencies. Treatment: Extract Method and call it from both sites.
+• LazyClass —Aclassthat does almost nothing, typically just delegating to one other class. It adds
+navigation overhead with no benefit. Treatment: Inline Class or Collapse Hierarchy.
+• DataClass—Aclasswithonly fields, getters, and setters, no meaningful behaviour. Objects should
+encapsulate both data and behaviour. Treatment: Move Method to bring behaviour to the data.
+• Speculative Generality — Code written for hypothetical future requirements that do not exist yet
+(gold plating). Unused abstract classes, hook methods, or parameters. Treatment: Collapse Hierarchy,
+Inline Class, or remove unused code.
+Smell Name
+File and Line
+What MakesIt Dispensable?
+Treatment
+Category 5: Couplers [3 Marks]
+Couplers represent excessive or inappropriate coupling between classes. The five coupler smells are:
+Feature Envy, Inappropriate Intimacy, Message Chain, Middleman, and Incomplete Library Class.
+• FeatureEnvy—Amethodthatspends moretimeusing data ormethodsofanother class than its
+own. The intelligence is in the wrong place. Treatment: Move Method to the class whose data it
+envies.
+• Inappropriate Intimacy — Two classes that know too much about each other's private details, often
+because a class was split incorrectly. Treatment: Move Method/Field, or Encapsulate Field to
+establish proper boundaries.
+• MessageChain—Aclientcalls object A to get B, then B toget C, then C to get D. The client is tightly
+coupled to the entire chain. Treatment: Hide Delegate or extract the chain into a dedicated method.
+• Middleman—Aclasswhoseonlypurpose isto delegate every call to another class. If more than half
+of its methods simply forward to another object, it adds no value. Treatment: Remove Middleman
+and call the delegated object directly.
+• Incomplete Library Class — A library class that almost does what you need but is missing one or two
+methods, forcing you to add logic in client code or subclass just to add the missing behaviour.
+Smell Name
+File and Line
+Description of the Coupling
+Problem
+Treatment
+B3. Smell Interaction and Prioritisation [3 Marks]
+Real systems rarely have isolated smells — one smell often causes another. In your report, write a
+structured analysis of 250 words or more addressing:
+5. Select any two smells from different categories that you found in the same area of your project.
+Explain how one smell likely contributed to or caused the other.
+6. Ofall the smells you identified across the five categories, which single smell poses the greatest risk to
+the long-term maintainability of this project? Justify your answer with reference to the specific code
+location and what a future developer would face when trying to modify that area.
+7. Whichrefactoring treatment would you apply first, and why? Consider both the effort required and
+the benefit delivered.
+B4. Refactoring Demonstration [3 Marks]
+Choose onesmell from your analysis — preferably one in Category 1 or 5 — and demonstrate the
+refactoring in code.
+8. Pastethe original code snippet (the smelly version) with the affected lines highlighted or annotated
+9. Apply the appropriate refactoring treatment and paste the improved version
+10. Write a paragraph confirming that the external behaviour is unchanged and explaining what
+structural property was improved
+Viva Note
+During viva you will be asked to point to the original smell in your project and explain your
+refactoring live. Both group members must be able to answer questions on any smell
+from any category.
+PartC—Dependency,CouplingandTechnicalDebt [15Marks]
+C1.DependencyMapping [7Marks]
+Selectsixclassesfromyourproject.Foreach,determineCa(afferentcoupling—howmanyclassesdepend
+onit),Ce(efferentcoupling—howmanyclassesitdependson),andInstabilityusingtheformulabelow.
+AfferentCoupling Ca=classesoutside this module that depend ON it
+EfferentCoupling Ce=classesoutside this module that this module depends ON
+Instability I = Ce/(Ca+Ce)
+I=0.0--> Maximallystable(many dependants, few dependencies)
+I=1.0--> Maximallyunstable(no dependants, many dependencies)
+ClassName Ca Ce Instability(I) Stable/
+Volatile KeyObservation
+Showfullworkingforatleasttwoclasses:listbynameeachclassthatcontributestoCaandCe.Thendraw
+thedependencygraphusingDraw.ioorGraphvizandembeditinyourreport.Identifyanycircular
+dependencyorGodClass(Ce>5).
+C2.TechnicalDebtAssessment [8Marks]
+IdentifythreerealtechnicaldebtitemsfromyourJavaproject.Eachmustreferenceanactualfileandline
+number.Classifyeachitemandcomputetheremediationcost.
+DebtClassification
+Item File+Line DebtType Intentional? PrudentorReckless?
+D1 Yes/No Prudent/Reckless
+D2 Yes/No Prudent/Reckless
+D3 Yes/No Prudent/Reckless
+Debt types: Design Debt, Code Debt, Test Debt, Documentation Debt, Dependency Debt, Architecture Debt.
+Remediation Cost Calculation
+Step 1: Extract SonarQube remediation estimate for each item (minutes)
+Step 2: Add 25% contingency buffer--> Buffered = Raw x 1.25
+Step 3: Total Remediation Effort = sum of all buffered values
+Step 4: Total Development Effort = SonarQube LOC x 30 minutes per line
+Step 5: Debt Ratio (%) = (Total Remediation / Total Development) x 100
+Interpretation: 0-5% = Healthy 5-10% = Moderate >10% = Risky
+Item
+RawEstimate (min)
++ 25%Buffer (min)
+Buffered Total (min)
+D1
+D2
+D3
+TOTAL
+After computing the Debt Ratio, state the health category and write a 200-word prioritisation argument:
+which debt item would you fix first and why, considering business impact, cost, and deferral risk.
+Part D —DynamicProgram Analysis [10 Marks]
+Select one non-trivial method from your Java project that contains at least one conditional statement and at
+least four local variables. Use it for all three tasks below.
+D1. Execution Trace with Python Tutor [4 Marks]
+Load the method (or a self-contained adaptation of it) into Python Tutor and trace it step by step. In your
+report:
+11. Paste the full source code of the chosen method and name the class it belongs to
+12. Complete the execution trace table below
+13. Include a Python Tutor screenshot at the moment a conditional branch is evaluated, with the frame
+panel showing variable values
+14. Write one paragraph explaining which branch was taken and why, based on the actual variable state
+Step
+Statement Executed
+Variables Before
+Variables After
+Notes
+1
+2
+3
+4
+...
+Continue as needed
+D2. Control Flow Graph [3 Marks]
+Drawthe CFG ofthe same method using Draw.ioor Graphviz. Requirements:
+• Eachnodeisabasic block; each edge is a control transfer
+• Decisionnodes labelled with the boolean condition
+• ThepathtakeninD1highlighted with a different colour or bold border
+• OneENTRYnodeandatleastoneEXITnode
+After embedding the diagram, answer: (1) How many independent paths does the method have? (2)
+Calculate Cyclomatic Complexity using CC = E − N + 2. Compare with SonarQube's value for the same method.
+(3) What one change would reduce CC by 1?
+D3. Abstract Syntax Tree Inspection [3 Marks]
+Load the same methodinto AST Explorer (astexplorer.net) with the Java parser. In your report:
+15. Embeda screenshot of the AST expanded to at least three levels
+16. Annotate the following node types on the screenshot or in the text: MethodDeclaration,
+VariableDeclaration, IfStatement (or SwitchStatement), ReturnStatement, BinaryExpression
+17. Explain what the IfStatement node's internal structure reveals about how Java represents branching.
+Describe one practical re-engineering use case for ASTs — for example in a refactoring engine, a
+linter, or a code generator.
+PrismaUsageRequirement:
+Alldatabase-relatedtasks(PartsE,F,andG)mustbeimplementedusingPrismaORM.
+Instructions:
+1.InstallPrismausing:npminstallprisma--save-dev
+2.InitializePrisma:npxprismainit
+3.Configuredatabaseconnectionin.envfile
+4.Defineschemainschema.prismareflectingthelegacyandrefactoredstructures
+5.Runmigrationsusing:npxprismamigratedev
+6.UsePrismaClientforqueryingandvalidationinmigrationscripts
+7.Includescreenshotsofschema.prisma,migrationlogs,andsamplequeries
+PartE—DataSmellDetection [15Marks]
+Weight
+PartsE,F,andGtogethercovertheentiredatabaselayerandcarry40marks—more
+thananyotherdomaininthisproject—reflectingthecentralroleofdatarestructuringin
+legacysystemre-engineering.
+ThelegacyHealthBridgeHospitalManagementSystemstoresdataintheMySQLschemabelow.Thisschema
+waswrittenincrementallyoverfifteenyearsbymultipledevelopersandhasneverbeenformallyreviewed.
+Yourtaskistoreaditcarefully,identifydatasmells,anddocumentthemwithprecision.
+E1.TheLegacyHospitalSchema--HealthBridgeHospitalManagementSystem — Legacy Schema--Accumulated2009–2024.Neverformally reviewed.
+CREATETABLEpat_master(
+pid INT,
+p_name VARCHAR(255),
+dob VARCHAR(50),-- stored as 'DD/MM/YYYY' plain text
+sex CHAR(1),-- 'M', 'F', or '3' for non-binary
+ph1 VARCHAR(255),
+ph2 VARCHAR(255),
+ph3 VARCHAR(255),-- repeating phone group
+addr1 VARCHAR(255),
+addr2 VARCHAR(255),
+city VARCHAR(255),
+reg_doc VARCHAR(255),-- doctor full name stored as plain text
+reg_doc_id VARCHAR(255),-- sometimes INT string, sometimes 'DR-042'
+total_visitsINT,-- updated manually, not via trigger
+last_bill FLOAT,-- stores PKR amounts; FLOAT used for
+currency
+notes TEXT-- JSON blobs, free text, and CSV tags all
+mixed
+);
+CREATETABLEappointments(
+appt_id INT,
+patient_id INT,
+patient_nm VARCHAR(255),-- duplicated from pat_master
+patient_ph VARCHAR(255),-- duplicated from pat_master
+doc_id INT,
+doc_name VARCHAR(255),-- duplicated from doctors table
+appt_date VARCHAR(50),-- 'YYYY-MM-DD HH:MM' stored as text
+status CHAR(1),-- 'P'=Pending 'C'=Complete 'X'=Cancel
+'H'=Hold'R'=Rescheduled
+fee FLOAT,
+discount FLOAT,
+net_fee FLOAT,-- always = fee-discount (derived value)
+room VARCHAR(255)-- 'Room 3 Block B' — two facts in one column
+);
+CREATETABLEdoctors(
+DoctorID INTPRIMARYKEY,
+FullName VARCHAR(255),
+Speciality VARCHAR(255),
+ContactNo VARCHAR(255),
+JoinDt VARCHAR(50),-- date stored as text
+Salary FLOAT,-- monthly salary stored as FLOAT
+dept_id INT,-- references departments but no FK defined
+isActive CHAR(1)-- 'Y', 'N', or sometimes '1'
+);
+CREATETABLEbilling(
+bill_no VARCHAR(50),-- intended as PK but no constraint defined
+pid INT,
+pname VARCHAR(255),-- patient name duplicated again
+services TEXT,-- 'Lab,Xray,OPD' — comma-separated list
+svc_cost FLOAT,
+tax_pct FLOAT,
+tax_amt FLOAT,-- derived: svc_cost * tax_pct / 100
+grand_total FLOAT,-- derived: svc_cost + tax_amt
+paid FLOAT,
+balance FLOAT,-- derived: grand_total-paid
+created VARCHAR(50),-- date stored as text
+created_by VARCHAR(255)-- username as free text; no FK to users
+);
+CREATETABLEdepartments(
+dept_id INTPRIMARYKEY,
+dept_nm VARCHAR(255),
+hod VARCHAR(255),-- head-of-department stored as plain name
+budget FLOAT
+);
+E2.SmellIdentification—CompleteReferenceTable [9Marks]
+Identifyatleasttendistinctdatasmellsfromtheschema.Eachsmellmustcomefromadifferenttable
+columncombination.Usetheofficialsmellcategoriesfromthecourselectures.Thetablemustbefully
+completed—partiallyfilledrowsreceivenomarks.
+# Table Column(s) Smell
+Category
+Smell
+Name
+Evidencefrom
+Schema
+Real-World
+Riskina
+Hospital
+ProposedFix
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+Smellcategoryreference—usetheseexactcategorynamesinyourtable:
+• Redundancy:DuplicateData,DerivedData
+• Structural:UnnormalizedTable,OverloadedColumn,Non-AtomicFields,GodTable
+• Naming:InconsistentNaming,AmbiguousColumnNames
+• Integrity:MissingKeys/Constraints,HiddenRelationships
+• DataType:TypeOptimizationSmell,MisusedBooleanFlag
+• Semantic:MagicValues/EncodedNulls,InconsistentUnits,PolymorphicAssociation
+• SecurityandLifecycle:LackofAuditTrail,SensitiveDataUnencrypted,NoRetentionPolicy
+E3.SmellPrioritisationandBusinessJustification [6Marks]
+Ofthetensmellsyouidentified,choosethefourthatposethegreatestrisktoalivehospitalsystem.For
+each,writeaconcretepatient-careorregulatoryscenariothatillustratestheconsequenceofleavingthe
+smellunaddressed.Thenrankallfourandjustifytheranking.
+Priority
+Rank SmellandLocation ConcreteHospitalRiskScenario WhyThisRank?
+1st
+2nd
+Priority
+Rank
+Smell and Location
+Concrete Hospital Risk Scenario
+WhyThis Rank?
+3rd
+4th
+After completing the table, write a paragraph (150 words minimum) explaining the connection between
+data smell severity and patient safety risk in a hospital information system. Use at least two of your
+identified smells as examples.
+PartF—SchemaNormalisationandRefactoring [15Marks]
+F1.Normalisationofpat_masterupto3NF [6Marks]
+Thepat_mastertableviolatesmultiplenormalforms.Applynormalisationstepbystep,documentingeach
+violationandthetransformationapplied.
+Step1—IdentifyViolations
+NormalForm Violated?
+(Yes/No) SpecificViolationExamplefrompat_master
+1NF—Atomic
+values;norepeating
+groups
+2NF—Full
+dependencyonthe
+wholekey
+3NF—Notransitive
+dependencies
+Step2—WritetheNormalisedSchema(CREATETABLEstatements)
+Writecomplete,runnableCREATETABLEstatementsforyournormaliseddesign.Everytablemusthavea
+clearlydefinedPRIMARYKEY.Foreignkeysmustreferencethecorrectparenttable.Useappropriatedata
+types—noVARCHARfordates,noFLOATformonetaryamounts.--WriteyournormalisedCREATETABLEstatements below.--Minimumexpectedtables:patients,patient_phones, patient_addresses--Additionaltablesmaybeneededdepending on your analysis.
+CREATETABLEpatients(--yourcolumnshere
+);
+CREATETABLEpatient_phones(--yourcolumnshere
+);--addfurthertablesasrequiredby your normalisation
+Step3—BeforeandAfterComparison
+Aspect Before(pat_master) After(NormalisedDesign)
+Numberoftables 1
+Aspect Before(pat_master) After(NormalisedDesign)
+Repeatingphonecolumns ph1,ph2,ph3
+Addressstorage Inlineaddr1/addr2/city
+Doctorreference Nameasplaintext
+Dateofbirthcolumntype VARCHAR(50)
+Primarykey Nonedefined
+Currencycolumns FLOAT
+F2.FiveSchemaRefactoringScripts [6Marks]
+Applythefiverefactoringoperationsbelowtothelegacyschema.Foreach,writearunnableSQLscriptand
+followitwithtwotothreesentencesexplainingthesmellitfixesandtheriskiteliminates.
+RefactoringR1—FixDerivedDatainbilling (1.5Marks)
+Removetax_amt,grand_total,andbalancefromthebillingtable.Replacewithaviewthatcomputesthem
+onread.--R1:Removederivedcolumnsfrombilling
+ALTERTABLEbillingDROPCOLUMNtax_amt;
+ALTERTABLEbillingDROPCOLUMNgrand_total;
+ALTERTABLEbillingDROPCOLUMNbalance;--Createviewtocomputederivedvalues on read
+CREATEORREPLACEVIEWv_billing_summary AS
+SELECT
+bill_no,
+pid,
+svc_cost,
+tax_pct,
+ROUND(svc_cost*tax_pct/100,2) AS tax_amt,
+ROUND(svc_cost+svc_cost*tax_pct / 100, 2) AS grand_total,
+paid,
+ROUND(svc_cost+svc_cost*tax_pct / 100-paid, 2) AS balance
+FROMbilling;
+[WriteyourexplanationoftheDerivedDatasmellandhowthisvieweliminatesithere.]
+RefactoringR2—FixOverloadedColumninappointments.status (1Mark)
+ReplacetheopaqueCHAR(1)statuscodewithareferencetableandenforceitviaaforeignkey.
+CREATETABLEappt_status_ref(
+status_code CHAR(1) PRIMARYKEY,
+description VARCHAR(50) NOTNULL
+);
+INSERTINTOappt_status_refVALUES
+('P','Pending'),('C','Completed'),('X','Cancelled'),
+('H','OnHold'),('R','Rescheduled');
+ALTERTABLEappointments
+ADDCONSTRAINTfk_appt_status
+FOREIGNKEY(status)REFERENCESappt_status_ref(status_code);
+[Writeyourexplanationhere.]
+RefactoringR3—FixInconsistentNamingacrossdoctors (1Mark)
+Standardiseallcolumnnamestolowercasesnake_caseinthedoctorstable.
+ALTERTABLEdoctorsRENAMECOLUMNDoctorID TO doctor_id;
+ALTERTABLEdoctorsRENAMECOLUMNFullName TO full_name;
+ALTERTABLEdoctorsRENAMECOLUMNSpeciality TO speciality;
+ALTERTABLEdoctorsRENAMECOLUMNContactNo TO contact_no;
+ALTERTABLEdoctorsRENAMECOLUMNJoinDt TO join_date;
+ALTERTABLEdoctorsRENAMECOLUMNSalary TO salary_monthly;
+ALTERTABLEdoctorsRENAMECOLUMNisActive TO is_active;--Applythesamestandardtoanyother tables with mixed casing.--Documenteveryrenamedcolumnbelow:
+[Listanyadditionaltablesyoualsorenamedandstatethenamingconventionadopted.]
+RefactoringR4—FixMissingConstraintsinbillingandappointments (1Mark)
+Addthemissingprimarykeytobillingandthemissingforeignkeystobothbillingandappointments.Include
+adata-backfillsteptoremoveorphanrowsbeforeenablingtheFK.--Step1:AddPKtobilling
+ALTERTABLEbillingADDPRIMARYKEY(bill_no);--Step2:Removeorphanbillingrows that reference non-existent patients
+DELETEFROMbillingWHEREpidNOTIN (SELECT pid FROM pat_master);--Step3:AddFKfrombillingtopat_master
+ALTERTABLEbilling
+ADDCONSTRAINTfk_billing_patient
+FOREIGNKEY(pid)REFERENCESpat_master(pid);--Step4:AddFKfromappointmentsto doctors
+ALTERTABLEappointments
+ADDCONSTRAINTfk_appt_doctor
+FOREIGNKEY(doc_id)REFERENCESdoctors(DoctorID);
+[ExplainwhytheDELETEbackfillstepisnecessarybeforetheFKconstraintcanbeapplied.]
+RefactoringR5—AddAuditTrailtoappointments (0.5Mark)
+ALTERTABLEappointments
+ADDCOLUMNcreated_at TIMESTAMPDEFAULT CURRENT_TIMESTAMP,
+ADDCOLUMNupdated_at TIMESTAMPDEFAULT CURRENT_TIMESTAMP
+ONUPDATECURRENT_TIMESTAMP;--ForPostgreSQL,useanexplicittrigger:
+CREATEORREPLACEFUNCTIONset_updated_at()
+RETURNSTRIGGERAS$$
+BEGIN NEW.updated_at=NOW(); RETURN NEW; END;
+$$LANGUAGEplpgsql;
+CREATETRIGGERtrg_appt_audit
+BEFOREUPDATEONappointments
+FOREACHROWEXECUTEFUNCTIONset_updated_at();
+[ExplaintheLackofAuditTrailsmellandthehospital-specificriskitcreates.]
+F3.RefactoringImpactSummary [3Marks]
+Refactoring Smell(s)Resolved TablesChanged RiskEliminated Effortvs
+Benefit
+R1—Deriveddata
+view DerivedData billing Inconsistencyin
+financialtotals
+R2—Status
+referencetable OverloadedColumn appointments Invalidstatuscodes
+R3—Naming
+standardisation InconsistentNaming doctors+others ORMerrors,dev
+confusion
+R4—PK/FK
+constraints MissingConstraints billing,
+appointments
+Orphanrows,silent
+corruption
+R5—Audittrail LackofAuditTrail appointments Noaccountabilityfor
+changes
+Writeaparagraphevaluatingwhichofthefiverefactoringsdeliveredthegreatestqualityimprovementper
+unitofeffort,andjustifyyouranswerusingspecificevidencefromtheschema.
+PartG—DataMigrationDesignandExecution [10Marks]
+TheHealthBridgeteamneedstomigratelegacyappointmentrecordsfromaCSVexportproducedbytheold
+systemintothenewlyrefactoredrelationalschemafromPartF.ThispartsimulatestheExtract-Transform
+Loadpipelinethatwouldprecedeaproductioncutover.
+G1.LegacySourceData
+TheoldsystemexportedappointmentrecordsintheCSVformatbelow.Thisisyourmigrationsource.
+appt_id,patient_id,patient_nm,patient_ph,doc_id,doc_name,appt_date,status,fee,discount,ne
+t_fee,room
+1001,5,"AliHassan","0312-9876543",12,"Dr. Kamran Raza","15/03/2024
+09:30","P",1500.00,0.00,1500.00,"Room3 Block B"
+1002,8,"SaraMalik","0333-1234567",7,"Dr. Ayesha Noor","15/03/2024
+10:00","C",2000.00,200.00,1800.00,"Room7 Block A"
+1003,5,"AliHassan","0312-9876543",12,"Dr. Kamran Raza","16/03/2024
+11:00","X",1500.00,0.00,1500.00,"Room3 Block B"
+1004,21,"HinaIqbal","0321-5556789",7,"Dr. Ayesha Noor","17/03/2024
+09:00","H",2000.00,500.00,1500.00,"Room7 Block A"
+...(assume500rowstotalinthereal file)
+G2.MigrationPlan [3Marks]
+PlanElement YourResponse
+Sourceformat CSVexportedfromlegacysystem
+Targetschema Refactoredappointmentstable(fromPartF)
+Estimatedrowcount ~500records
+Requiredtransformations(listat
+least4)
+Columnstodrop(redundantafter
+normalisation)
+ETLtoolorlanguage
+Rollbackstrategyifmigrationfails
+Validationmethodafter
+migration
+Estimatedexecutiontime
+Willthesystemrequire
+downtime?
+G3.ETLTransformationScript [5Marks]
+WriteacompletePythonorSQLmigrationscriptimplementingallfourrequiredtransformationsbelow.
+Includeinlinecommentsoneverynon-trivialline.
+# Transformation Reason(DataSmellAddressed)
+T1 Convertappt_datefrom'DD/MM/YYYYHH:MM'
+stringtoaproperDATETIMEvalue DataTypesmell—datesstoredastext
+T2 Splittheroomcolumn('Room3BlockB')into
+room_numberINTandbuilding_blockVARCHAR Non-AtomicFieldssmell—twofactsinonecolumn
+T3 Omitpatient_nm,patient_ph,doc_namefromthe
+INSERT—theyarenowderivedfromFKlookups
+DuplicateDatasmell—redundantafter
+normalisation
+T4 Validateeachstatusvalueagainstappt_status_ref;
+logandskipanyrowwithanunknowncode
+OverloadedColumnfix—invalidcodesmustnot
+enterthenewschema
+#migration_etl.py—LoadlegacyCSV into refactored appointments schema
+importcsv,mysql.connector
+fromdatetimeimportdatetime
+VALID_STATUSES={'P','C','X','H', 'R'}
+defparse_appt_date(raw): #T1: 'DD/MM/YYYY HH:MM'--> datetime
+#implementhere
+pass
+defsplit_room(raw): #T2: 'Room 3 Block B'--> (3, 'Block B')
+#implementhere
+pass
+defmigrate(csv_path,db_config):
+conn =mysql.connector.connect(**db_config)
+cursor=conn.cursor()
+skipped= []
+withopen(csv_path,newline='',encoding='utf-8') as f:
+reader=csv.DictReader(f)
+forrowinreader:
+# T4:validatestatus;skip and log unknown codes
+ifrow['status']notinVALID_STATUSES:
+skipped.append(row['appt_id'])
+continue
+appt_dt =parse_appt_date(row['appt_date']) # T1
+room_no,block=split_room(row['room']) # T2
+# T3:patient_nm,patient_ph, doc_name intentionally omitted
+cursor.execute(
+'''INSERTINTOappointments
+(appt_id,patient_id, doc_id, appt_datetime,
+status,fee,discount, room_number, building_block)
+VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)''',
+(row['appt_id'],row['patient_id'], row['doc_id'],
+appt_dt,row['status'], row['fee'], row['discount'],
+room_no,block)
+)
+conn.commit()
+print(f'Done.Skipped{len(skipped)} rows with invalid status: {skipped}')
+cursor.close();conn.close()
+#Completethepassstubsabove,run the script, and include a terminal
+screenshot.
+Completeallpassstubs,runthescriptagainstyourlocallyloadedCSVsample(minimum10rows),and
+includeascreenshotoftheterminalshowingthemigrationoutputwithrowcounts.
+G4.Post-MigrationValidation [2Marks]
+Runallfourqueriesbelowagainstthemigrateddataandrecordresults.Ifanycheckfails,describeyour
+investigationandresolution.--V1:Rowcountmustmatchvalidrows in CSV
+SELECTCOUNT(*)ASmigrated_rowsFROM appointments;--V2:NoNULLdatetimevalues(T1must have worked for every row)
+SELECTCOUNT(*)ASnull_datesFROMappointments WHERE appt_datetime IS NULL;--Expected:0--V3:Onlyvalidstatuscodesexist(T4 must have filtered invalid codes)
+SELECTDISTINCTstatusFROMappointments;--Expected:onlycodespresentinappt_status_ref--V4:Noorphanappointments(patient_id must exist in patients table)
+SELECTCOUNT(*)ASorphansFROMappointments a
+LEFTJOINpatientspONa.patient_id= p.patient_id
+WHEREp.patient_idISNULL;--Expected:0
+Query Expected YourResult Pass/Fail ActionTakenifFail
+V1—Row
+count
+Matchesvalid
+CSVrows
+V2—Null
+dates 0
+Query
+Expected
+Your Result
+Pass/Fail
+Action Taken if Fail
+V3 —Valid
+statuses
+P,C,X,H,R only
+V4 —No
+orphans
+0
+Submission Requirements and Academic Integrity
+WhattoSubmit
+• OnePDFreportcontaining all parts A through G, properly sectioned and paginated with figure labels
+on every screenshot
+• AGitHubrepository containing: the forked or cloned Java project, sonar-project.properties, all SQL
+scripts from Parts F and G, the Python migration script, and a README with setup instructions
+• TheREADMEmustincludecommandstostartSonarQube, runthe scanner, load the hospital schema,
+and execute the migration script
+Report Standards
+• Everyscreenshot must be followed immediately by a written explanation. Screenshots without
+explanation receive zero marks.
+• AllSQLscripts must be runnable without modification. Scripts with syntax errors receive zero marks
+for that section.
+• Allinterpretations must be specific to your chosen project and the provided schema. Generic
+definitions copied from lecture slides receive zero marks.
+• Tablesmustbefully completed. Rows left blank or filled with placeholder text receive no marks.
+• Bothgroupmembersmustattendtheviva.SonarQube, the database, and the migration script must
+be in a running state on the presenting machine.
+Academic Integrity
+Each group's Java project will differ. The database analysis is performed on the same provided schema, but
+your smell identification, normalisation decisions, refactoring scripts, and written analyses must reflect your
+ownreasoning. Groups found to have copied written analysis from one another will receive zero marks for
+the entire project. All plagiarism cases are reported to the department.
+Final Marks Summary
+Section
+MaxMarks
+Marks
+Obtained
+Part A —Project Initialisation and Tool Setup
+8
+Part B —Code Smell Analysis and Refactoring
+27
+Part C —Dependency, Coupling and Technical Debt
+15
+Part D —Dynamic Program Analysis
+10
+Part E —Data Smell Detection
+15
+Section
+MaxMarks
+Marks
+Obtained
+Part F —Schema Normalisation and Refactoring
+15
+Part G —DataMigration Design and Execution
+10
+TOTAL
+100
